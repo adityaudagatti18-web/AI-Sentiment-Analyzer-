@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Sentiment Analyzer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{--bg:#F2F5F7;--surface:#fff;--ink:#14212B;--muted:#586977;--line:#D8E0E6;--pos:#12805F;--neu:#6F7F8C;--neg:#C23B34;--pos-bg:#E0F2EB;--neu-bg:#E7EBEE;--neg-bg:#FAE6E4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1A22;--surface:#17262F;--ink:#E7EEF3;--muted:#96A7B4;--line:#263A47;--pos:#3CC79B;--neu:#8FA1AE;--neg:#F0736B;--pos-bg:#143A31;--neu-bg:#22313B;--neg-bg:#452322}}
+:root[data-theme="dark"]{--bg:#0F1A22;--surface:#17262F;--ink:#E7EEF3;--muted:#96A7B4;--line:#263A47;--pos:#3CC79B;--neu:#8FA1AE;--neg:#F0736B;--pos-bg:#143A31;--neu-bg:#22313B;--neg-bg:#452322}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,.num{font-family:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;letter-spacing:-.02em}
+.wrap{max-width:860px;margin:0 auto;padding:28px 18px 56px}
+h1{font-size:clamp(28px,6vw,40px);line-height:1.1;margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 22px;max-width:60ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+label.h{display:block;font-weight:500;margin-bottom:8px}
+textarea{width:100%;min-height:180px;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;line-height:1.5}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+button,.filebtn{font:inherit;font-weight:500;border-radius:10px;padding:9px 16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible,textarea:focus-visible,.filebtn:focus-within{outline:3px solid var(--pos);outline-offset:2px}
+.filebtn input{position:absolute;opacity:0;width:1px;height:1px}
+.filebtn{position:relative}
+.cnt{margin-left:auto;color:var(--muted);font-size:14px}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
+.top h2{font-size:clamp(24px,5vw,32px);margin:0}
+.big{font-size:clamp(40px,10vw,60px);line-height:1;font-weight:700}
+.pos{color:var(--pos)}.neg{color:var(--neg)}.neu{color:var(--neu)}
+.lead{margin:12px 0 4px;max-width:66ch}
+.spec{position:relative;height:34px;margin:22px 4px 4px}
+.track{position:absolute;left:0;right:0;top:12px;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--neg),var(--neu) 50%,var(--pos))}
+.dot{position:absolute;top:17px;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--surface);border:3px solid var(--ink);opacity:.8}
+.avg{position:absolute;top:2px;width:4px;height:30px;margin-left:-2px;border-radius:2px;background:var(--ink);outline:2px solid var(--surface)}
+.scale{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin:0 4px 16px}
+.dist{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line)}
+.dist i{display:block;height:100%}
+.leg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0 0;font-size:14px;color:var(--muted)}
+.leg b{color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
+.chip{padding:2px 10px;border-radius:99px;font-size:14px}
+.chip.p{background:var(--pos-bg);color:var(--pos)}.chip.n{background:var(--neg-bg);color:var(--neg)}
+h3{font-size:15px;margin:16px 0 0;font-weight:500;color:var(--muted)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rev{border:1px solid var(--line);border-left-width:5px;border-radius:12px;background:var(--surface);padding:12px 14px;margin-bottom:10px}
+.rev.positive{border-left-color:var(--pos)}.rev.negative{border-left-color:var(--neg)}.rev.neutral{border-left-color:var(--neu)}
+.rh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+.badge{font-size:13px;font-weight:500;padding:1px 10px;border-radius:99px}
+.badge.positive{background:var(--pos-bg);color:var(--pos)}.badge.negative{background:var(--neg-bg);color:var(--neg)}.badge.neutral{background:var(--neu-bg);color:var(--neu)}
+.sc{font-weight:700;font-size:20px}
+.rev p{margin:0;overflow-wrap:anywhere}
+mark{background:none;font-weight:500;border-bottom:2px solid}
+mark.p{color:var(--pos);border-color:var(--pos)}mark.n{color:var(--neg);border-color:var(--neg)}
+.empty{color:var(--muted);padding:8px 0}
+.note{color:var(--muted);font-size:13px;margin-top:22px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>AI Sentiment Analyzer</h1>
+  <p class="sub">Paste customer reviews, one per line. Each review is classified as positive, neutral or negative and scored from −1 to +1.</p>
+
+  <section class="card">
+    <label class="h" for="in">Reviews</label>
+    <textarea id="in" placeholder="One review per line"></textarea>
+    <div class="row">
+      <button class="primary" id="go">Analyze reviews</button>
+      <label class="filebtn">Upload .txt or .csv<input type="file" id="file" accept=".txt,.csv,text/plain"></label>
+      <button id="sample">Load samples</button>
+      <button id="clear">Clear</button>
+      <span class="cnt" id="cnt" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section id="out" aria-live="polite"></section>
+
+  <p class="note">Scoring runs in your browser with a word-weight model that handles negation ("not good"), intensity ("very"), contrast ("but") and emoji. Nothing is uploaded.</p>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const LEX={};
+("love:3 loved:3 amazing:3 excellent:3 fantastic:3 perfect:3 awesome:3 great:2.5 wonderful:3 best:2.5 outstanding:3 superb:3 brilliant:3 good:2 nice:1.5 happy:2 pleased:2 satisfied:2 recommend:2 recommended:2 reliable:2 fast:1.5 quick:1.5 easy:1.5 smooth:1.5 comfortable:2 beautiful:2.5 friendly:2 helpful:2 durable:2 worth:1.5 impressive:2.5 delicious:2.5 fresh:1.5 clean:1.5 sturdy:1.5 solid:1.5 enjoy:2 enjoyed:2 favorite:2.5 gorgeous:3 bright:1.5 responsive:1.5 affordable:1.5 like:1 liked:1 fun:2 stunning:3 flawless:3 lovely:2.5 polite:1.5 efficient:2 intuitive:2 crisp:1.5 handy:1.5 quiet:1 value:1.5 "+
+"hate:-3 hated:-3 terrible:-3 awful:-3 horrible:-3 worst:-3.5 bad:-2 poor:-2 disappointing:-2.5 disappointed:-2.5 useless:-3 broken:-2.5 slow:-1.5 laggy:-2 buggy:-2 crash:-2.5 crashes:-2.5 crashed:-2.5 defective:-3 waste:-2.5 rude:-2.5 flimsy:-2 overpriced:-2 expensive:-1 uncomfortable:-2 noisy:-1.5 dirty:-2 stale:-2 cold:-1 late:-1.5 delayed:-1.5 refund:-1.5 unreliable:-2.5 annoying:-2 frustrating:-2.5 confusing:-1.5 difficult:-1.5 problem:-1.5 problems:-1.5 issue:-1.2 issues:-1.2 fail:-2.5 failed:-2.5 fails:-2.5 scam:-3.5 damaged:-2.5 missing:-1.5 lacking:-1.5 mediocre:-1.5 boring:-2 ugly:-2.5 dislike:-2 unhappy:-2 regret:-2.5 painful:-2 unusable:-3 glitchy:-2 stopped:-1.5")
+.split(" ").forEach(p=>{const [w,v]=p.split(":");LEX[w]=+v});
+const BOOST={very:1.4,really:1.3,extremely:1.6,so:1.3,absolutely:1.6,super:1.4,incredibly:1.6,quite:1.15,too:1.3,totally:1.4,highly:1.4,slightly:.6,somewhat:.6,kinda:.6,bit:.6,barely:.5};
+const NEGS=new Set(["not","no","never","hardly","without","cannot","neither","nor"]);
+const EMO=[["😍",2],["❤",2],["👍",1.5],["😊",1.5],["😀",1.5],["🙂",1],["😡",-2.5],["👎",-2],["😞",-2],["😠",-2.5],["😢",-1.5],["🤬",-3]];
+const SAMPLES=`Absolutely love this blender! Crushes ice in seconds and it's so easy to clean.
+Arrived late and the box was damaged. The product works, but I'm really disappointed with the packaging.
+It's okay. Does what it says, nothing special.
+Terrible customer service. Nobody answered and I never got my refund.
+Great value for the price, would definitely recommend to friends!
+The battery is not good and the screen is laggy. Waste of money.
+Not bad at all. Comfortable, and the sound is really impressive.
+Delivered on Tuesday.
+Sturdy, quiet, and looks beautiful on my counter 😍
+Stopped working after two weeks. Worst purchase I've made.`;
+
+function label(s){return s>=.15?"positive":s<=-.15?"negative":"neutral"}
+function analyze(text){
+  const toks=text.toLowerCase().replace(/n't\b/g," not").replace(/[^a-z\s]/g," ").split(/\s+/).filter(Boolean);
+  const butAt=toks.indexOf("but");let sum=0;const hits=[];
+  toks.forEach((w,i)=>{
+    let v=LEX[w];if(v===undefined)return;
+    const m=BOOST[toks[i-1]]??BOOST[toks[i-2]];if(m)v*=m;
+    let neg=false;
+    for(let j=i-1;j>=Math.max(0,i-3);j--){if(toks[j]==="but")break;if(NEGS.has(toks[j])){neg=true;break}}
+    if(neg)v*=-.75;
+    if(butAt>-1)v*=i<butAt?.7:1.3;
+    sum+=v;hits.push({w,v,shown:(neg?"not ":"")+w});
+  });
+  const ex=Math.min(3,(text.match(/!/g)||[]).length);
+  if(sum)sum+=Math.sign(sum)*ex*.3;
+  EMO.forEach(([e,v])=>{if(text.includes(e))sum+=v});
+  const score=sum/Math.sqrt(sum*sum+8);
+  return{text,score,label:label(score),hits};
+}
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function hl(r){
+  const m={};r.hits.forEach(h=>m[h.w]=h.v>0?"p":"n");
+  return esc(r.text).replace(/[A-Za-z']+/g,w=>{const k=w.toLowerCase();return m[k]?`<mark class="${m[k]}">${w}</mark>`:w});
+}
+const fmt=s=>(s>0?"+":s<0?"−":"")+Math.abs(s).toFixed(2);
+const pct=(n,t)=>Math.round(n/t*100);
+let R=[],F="all";
+
+function themes(kind){
+  const c={};
+  R.forEach(r=>r.hits.forEach(h=>{if((kind==="p")===(h.v>0)){c[h.shown]=(c[h.shown]||0)+Math.abs(h.v)}}));
+  return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,6).map(e=>e[0]);
+}
+function render(){
+  const out=$("#out");
+  if(!R.length){out.innerHTML='<div class="card empty">Add at least one review above, then choose Analyze reviews.</div>';return}
+  const n=R.length,cnt={positive:0,neutral:0,negative:0};
+  R.forEach(r=>cnt[r.label]++);
+  const avg=R.reduce((a,r)=>a+r.score,0)/n,ol=label(avg);
+  const split=cnt.positive/n>=.25&&cnt.negative/n>=.25;
+  const strength=Math.abs(avg)>=.5?"strongly ":Math.abs(avg)>=.3?"":"slightly ";
+  const head=split&&ol==="neutral"?"Mixed opinions":ol==="neutral"?"Neutral overall":"Mostly "+ol;
+  const cls=split&&ol==="neutral"?"neu":{positive:"pos",negative:"neg",neutral:"neu"}[ol];
+  const pw=themes("p"),nw=themes("n");
+  let lead=`Across ${n} review${n>1?"s":""}, sentiment is ${split?"split: ":strength+ol+" "}`+
+    `${pct(cnt.positive,n)}% positive, ${pct(cnt.neutral,n)}% neutral and ${pct(cnt.negative,n)}% negative, with an average score of ${fmt(avg)}.`;
+  if(split)lead=lead.replace("sentiment is split: ","opinion is divided: ");
+  const dots=R.map(r=>`<span class="dot" style="left:${(r.score+1)*50}%" title="${fmt(r.score)}"></span>`).join("");
+  let h=`<section class="card"><div class="top"><div class="big num ${cls}">${fmt(avg)}</div><h2>${head}</h2></div>
+  <p class="lead">${lead}</p>
+  <div class="spec" role="img" aria-label="Each review plotted from negative to positive; the bar marks the average"><div class="track"></div>${dots}<span class="avg" style="left:${(avg+1)*50}%"></span></div>
+  <div class="scale"><span>−1 negative</span><span>0</span><span>+1 positive</span></div>
+  <div class="dist"><i style="width:${cnt.positive/n*100}%;background:var(--pos)"></i><i style="width:${cnt.neutral/n*100}%;background:var(--neu)"></i><i style="width:${cnt.negative/n*100}%;background:var(--neg)"></i></div>
+  <div class="leg"><span><b class="pos">${cnt.positive}</b> positive</span><span><b class="neu">${cnt.neutral}</b> neutral</span><span><b class="neg">${cnt.negative}</b> negative</span></div>`;
+  if(pw.length)h+=`<h3>What people praise</h3><div class="chips">${pw.map(w=>`<span class="chip p">${esc(w)}</span>`).join("")}</div>`;
+  if(nw.length)h+=`<h3>What people complain about</h3><div class="chips">${nw.map(w=>`<span class="chip n">${esc(w)}</span>`).join("")}</div>`;
+  h+=`</section><div class="filters" role="group" aria-label="Filter reviews">`+
+    [["all","All",n],["positive","Positive",cnt.positive],["neutral","Neutral",cnt.neutral],["negative","Negative",cnt.negative]]
+    .map(([k,t,c])=>`<button data-f="${k}" aria-pressed="${F===k}">${t} (${c})</button>`).join("")+`</div>`;
+  const list=R.filter(r=>F==="all"||r.label===F);
+  h+=list.length?list.map(r=>`<article class="rev ${r.label}"><div class="rh"><span class="badge ${r.label}">${r.label[0].toUpperCase()+r.label.slice(1)}</span><span class="sc num ${{positive:"pos",negative:"neg",neutral:"neu"}[r.label]}">${fmt(r.score)}</span></div><p>${hl(r)}</p></article>`).join(""):'<div class="empty">No reviews in this group.</div>';
+  out.innerHTML=h;
+}
+function lines(){return $("#in").value.split(/\n+/).map(s=>s.trim()).filter(Boolean)}
+function count(){const n=lines().length;$("#cnt").textContent=n+" review"+(n===1?"":"s")+" detected"}
+function run(){R=lines().map(analyze);F="all";count();render()}
+$("#go").onclick=run;
+$("#in").oninput=count;
+$("#sample").onclick=()=>{$("#in").value=SAMPLES;run()};
+$("#clear").onclick=()=>{$("#in").value="";run()};
+$("#out").onclick=e=>{const b=e.target.closest("[data-f]");if(b){F=b.dataset.f;render()}};
+$("#file").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const fr=new FileReader();
+  fr.onload=()=>{const t=$("#in");t.value=(t.value.trim()?t.value.trim()+"\n":"")+String(fr.result).replace(/\r/g,"").trim();run();e.target.value=""};
+  fr.readAsText(f);
+};
+$("#in").value=SAMPLES;run();
+</script>
+</body>
+</html>
